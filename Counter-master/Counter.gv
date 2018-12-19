@@ -1,0 +1,5 @@
+digraph ge
+{
+ splines = "polyline";
+9692936 [shape = record, style = filled, fillcolor = "cyan", label = "{00000000 | { 1 | 1.59525 }| 0093E708 | {<l> 00000000 | <r> 00000000 }} "];
+}

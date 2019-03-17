@@ -11,31 +11,8 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "CountTree.h"
+#include "ZulanTree.h"
 
-#ifndef $
-#define $(x) std::cout<<"~"<<#x " = "<<x<<"\n";
-#endif
-
-#define SynAssert(function,expr,extrabody)    if(!(expr))\
-                                    {\
-                                        printf("Syntax error: \"%c\", char %i\n", *S, S - BEGIN+1);\
-                                        CountError = 1;\
-                                        extrabody;\
-                                        return NULL;\
-                                    }\
-
-static const char* S = NULL;
-static const char* BEGIN = NULL;
-static int CountError = 0;
-
-Tree* get_G(const char* str);
-Node* get_E(Tree* AST);
-Node* get_T(Tree* AST);
-Node* get_D(Tree* AST);
-Node* get_P(Tree* AST);
-Node* get_N(Tree* AST);
-Node* get_Id(Tree* AST);
 
 Node* operate_branch_create(unsigned int *out_tree_ver_num, tree_type oper, Node* value1, Node* value2);
 

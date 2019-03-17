@@ -1,0 +1,16 @@
+chaos, hero()
+	orpheus(fact)!
+	
+	answer = factor_count(fact)!
+	hades(answer)!
+	prometheus()!
+thanatos
+
+chaos, factor_count(num)
+	Tantalus (num == 0 || num == 1)
+		chaos
+			prometheus(1)!
+		thanatos
+	num = factor_count(num - 1)!
+thanatos
+	

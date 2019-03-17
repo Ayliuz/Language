@@ -1,6 +1,6 @@
 //// TREE.CPP
 
-#include "CountTree.h"
+#include "ZulanTree.h"
 
 
 void tree_Ctor(Tree* tree)
@@ -12,9 +12,11 @@ void tree_Ctor(Tree* tree)
 
     ROOT(tree) = NULL;
     tree->variables = (char**) calloc(START_VAR_NUM, sizeof(*tree->variables));
+    tree->functions = (char**) calloc(START_VAR_NUM, sizeof(*tree->functions));
 
-    tree->ver_num = 0;
-    tree->var_count = 0;
+    tree->ver_num       = 0;
+    tree->var_count     = 0;
+    tree->func_count    = 0;
 
     tree_make_hash(tree);
 }
@@ -25,6 +27,7 @@ void tree_Dtor(Tree* tree)
 
     tree_clear(tree);
     free_table(tree->variables, tree->var_count);
+    free_table(tree->functions, tree->func_count);
 
     tree->TreeHash_struct = HASHPOIS;
 
@@ -536,7 +539,7 @@ Node* get_node(FILE* read_file, Tree* AST)
     long pos = ftell(read_file);
     fscanf(read_file, "%[^()]s", var);
 
-    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                 if(!strnicmp(var, read_body, strlen(var)))\
                 {\
                         info = operator;\
@@ -569,33 +572,6 @@ Node* get_node(FILE* read_file, Tree* AST)
 
     return node_create(type, info);
 }
-
-//***********************************
-/// Finds string element in an array of strings
-///
-/// \param [in] char** arr - array to find element in
-/// \param [in] unsigned int N_arr - number of elements in the array
-/// \param [in] char* str - element to find
-///
-///
-/// \return index of the element or -1, if not found
-///
-//************************************
-
-int find_elem(char** arr, int N_arr, const char* str)
-{
-    assert(arr && str);
-
-    for (int i = 0; i < N_arr; i++)
-    {
-        if (arr[i] && (strcmp(arr[i], str) == 0))
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-
 
 int branch_compare(Node* node1, Node* node2)
 {
@@ -641,7 +617,7 @@ int tree_is_OK(Tree* tree)
         return TRERLEN;
     }
 
-    if (tree->var_count >= START_VAR_NUM)
+    if (tree->var_count >= START_VAR_NUM || tree->func_count >= START_VAR_NUM)
     {
         return TRERVARLEN;
     }
@@ -704,6 +680,13 @@ int tree_dump(const char dot[], const char DUMPNAME[], Tree* tree)
         printf("      %i: %s\n", i, tree->variables[i]);
     }
 
+    printf("\n   Functions = [0x%X]:\n      Number of functions = %u\n", (out_ptr) tree->functions, tree->func_count);
+
+    for (int i = 0; i < tree->func_count; i++)
+    {
+        printf("      %i: %s\n", i, tree->functions[i]);
+    }
+
     DO_REAL_HASH;
     printf("\n   In memory Struct_Hash = %i\n", StructHash_buf);
     printf("        Real Struct_Hash = %i\n", RealHash_buf);
@@ -716,7 +699,7 @@ int tree_dump(const char dot[], const char DUMPNAME[], Tree* tree)
         CASE_TREE_OK(TRERLEN,    "Tree length is not suitable");
         CASE_TREE_OK(TRERPOS,    "Links between tree elements are damaged");
         CASE_TREE_OK(TRERSTRUCT, "Structure of the tree is damaged");
-        CASE_TREE_OK(TRERVARLEN, "Too many variables")
+        CASE_TREE_OK(TRERVARLEN, "Too many variables or functions")
     default:
         printf("   Tree verification failed\n");
         return 1;
@@ -730,18 +713,47 @@ int tree_dump(const char dot[], const char DUMPNAME[], Tree* tree)
     return 0;
 }
 
-#define NONE_ND(pos)                            strcat(dump_str, #pos "%i[shape = none, label = \"\"];\n %i:<" #pos "> -> " #pos "%i[style = \"invis\"];\n")
+#define NONE_ND(pos)                                    strcat(dump_str, #pos "%i[shape = none, label = \"\"];\n %i:<" #pos "> -> " #pos "%i[style = \"invis\"];\n")
 
-#define GET_EDGE(pos)                           strcat(dump_str, "%i:<" #pos "> -> %i ;\n")
+#define GET_EDGE(pos)                                   strcat(dump_str, "%i:<" #pos "> -> %i ;\n")
 
-#define PRINT_ARG(out_info)                     dump_file, dump_str, node, PARENT(node), node->type, out_info, node, LEFT(node), RIGHT(node)
+#define PRINT_ARG(out_info)                             dump_file, dump_str, node, PARENT(node), node->type, out_info, node, LEFT(node), RIGHT(node)
 
-#define MAKE_VERTEX_STR(color,out_info)         strcat(dump_str, "%i [shape = record, style = filled, fillcolor = \"" #color "\", label = \"{%p | { %i | %" #out_info " }| %p | {<l> %p | <r> %p }} \"];\n")
+#define MAKE_VERTEX_STR(color,out_info)                 strcat(dump_str, "%i [shape = record, style = filled, fillcolor = \"" #color "\", label = \"{%p | { %i | %" #out_info " }| %p | {<l> %p | <r> %p }} \"];\n")
 
-#define CASE_TYPE(val,color,out_info,body)      case (val):\
-                                                        MAKE_VERTEX_STR(color, out_info);\
-                                                        body;\
-                                                        break
+#define CASE_TYPE_NO_CHILD(val,color,out_info,body_info)    case (val):\
+                                                            MAKE_VERTEX_STR(color, out_info);\
+                                                            fprintf(PRINT_ARG(body_info));\
+                                                            break
+
+#define CASE_TYPE_CHILDREN(val,color,out_info,body_info)    case (val):\
+                                                            {\
+                                                                MAKE_VERTEX_STR(color, out_info);\
+                                                                \
+                                                                if(!LEFT(node) && !RIGHT(node))\
+                                                                {\
+                                                                    fprintf(PRINT_ARG(body_info));\
+                                                                }\
+                                                                else if(!RIGHT(node))\
+                                                                {\
+                                                                    NONE_ND(r);\
+                                                                    GET_EDGE(l);\
+                                                                    fprintf(PRINT_ARG(body_info), node, node, node, node, LEFT(node));\
+                                                                }\
+                                                                else if(!LEFT(node))\
+                                                                {\
+                                                                    NONE_ND(l);\
+                                                                    GET_EDGE(r);\
+                                                                    fprintf(PRINT_ARG(body_info), node, node, node, node, RIGHT(node));\
+                                                                }\
+                                                                else\
+                                                                {\
+                                                                    GET_EDGE(l);\
+                                                                    GET_EDGE(r);\
+                                                                    fprintf(PRINT_ARG(body_info), node, LEFT(node), node, RIGHT(node));\
+                                                                }\
+                                                            }\
+                                                            break
 
 int node_dump(FILE* dump_file, Tree* AST, Node* node)
 {
@@ -761,7 +773,7 @@ int node_dump(FILE* dump_file, Tree* AST, Node* node)
 
             switch((int) node->info)
             {
-                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                 case (operator):\
                 {\
                     out_oper = read_body;\
@@ -789,12 +801,23 @@ int node_dump(FILE* dump_file, Tree* AST, Node* node)
             break;
         }
 
-        CASE_TYPE(CONST_T, cyan, lg,  fprintf(PRINT_ARG(node->info)));
-        CASE_TYPE(VAR, springgreen, s, fprintf(PRINT_ARG(AST->variables[(int) node->info])));
+        CASE_TYPE_NO_CHILD(CONST_T, cyan, lg, node->info);
+        CASE_TYPE_CHILDREN(VAR,     springgreen, s, AST->variables[(int) node->info]);
+
+        CASE_TYPE_CHILDREN(IF,      orange,     s,  "if");
+        CASE_TYPE_CHILDREN(CIRCLE,  orange,     s,  "circle");
+        CASE_TYPE_CHILDREN(ASSIGN,  orange,     s,  "assign");
+
+        CASE_TYPE_CHILDREN(CALL,    red,        s,  "call");
+        CASE_TYPE_CHILDREN(INIT,    white,        s,  "initial");
+        CASE_TYPE_CHILDREN(FUNC,    orchid1,    s,  "function");
+        CASE_TYPE_CHILDREN(BODY,    orchid1,    s,  AST->functions[(int) node->info]);
+        CASE_TYPE_CHILDREN(BLOCK,   orchid1,    s,  "block");
+        CASE_TYPE_CHILDREN(LINE,    orchid1,    s,  "line");
+        CASE_TYPE_CHILDREN(END,     red,        s,  "end");
 
         default:
             return 0;
-
     }
 
     node_dump(dump_file, AST, LEFT(node));
@@ -827,14 +850,14 @@ int tree_draw(const char dot[], const char DUMPNAME[], Tree* tree)
     fclose(dump_file);
 
 
-    char* dotty = (char*) calloc(200, sizeof(*dotty));
+    char* dotty = (char*) calloc(300, sizeof(*dotty));
     dotty = strcpy(dotty, dot);                                     // make
     CONCATINATION(dotty, gv_name);                                  // dot
-    //CONCATINATION(dotty, " -o ");                                 // compile
-    //CONCATINATION(dotty, png_name);                               // command
+    CONCATINATION(dotty, " -o ");                                   // compile
+    CONCATINATION(dotty, png_name);                                 // command
 
     system(dotty);                                      //compile graphviz
-    //system(png_name);                                 //open png
+    system(png_name);                                   //open png
 
     free(gv_name);
     free(png_name);

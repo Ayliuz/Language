@@ -32,12 +32,25 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="CPU.cpp" />
+		<Unit filename="CPU.h" />
+		<Unit filename="Commands.h" />
 		<Unit filename="Counter.cpp" />
 		<Unit filename="Counter.h" />
+		<Unit filename="Data.h" />
 		<Unit filename="Operators.h" />
+		<Unit filename="Zulan.cpp" />
+		<Unit filename="Zulan.h" />
+		<Unit filename="ZulanTree.cpp" />
+		<Unit filename="ZulanTree.h" />
+		<Unit filename="assembler.cpp" />
+		<Unit filename="assembler.h" />
+		<Unit filename="disassembler.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="stack.cpp" />
 		<Unit filename="stack.h" />
+		<Unit filename="text.cpp" />
+		<Unit filename="text.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

@@ -1,0 +1,176 @@
+# depslib dependency file v1.0
+1549142395 source:c:\users\zue26\documents\github\language\assembler.cpp
+	"assembler.h"
+	"Commands.h"
+
+1549144595 c:\users\zue26\documents\github\language\assembler.h
+	<stdio.h>
+	<stdlib.h>
+	<iostream>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	"stack.h"
+	"text.h"
+	"Data.h"
+
+1545177711 c:\users\zue26\documents\github\language\stack.h
+	<stdio.h>
+	<stdlib.h>
+	<iostream>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+
+1544033288 c:\users\zue26\documents\github\language\text.h
+	<stdio.h>
+	<stdlib.h>
+	<iostream>
+	<clocale>
+	<string.h>
+	<ctype.h>
+	<assert.h>
+	<math.h>
+
+1549139142 c:\users\zue26\documents\github\language\data.h
+	"Commands.h"
+
+1549134681 c:\users\zue26\documents\github\language\commands.h
+
+1545336097 source:c:\users\zue26\documents\github\language\counter.cpp
+	"Counter.h"
+	"Operators.h"
+	"Operators.h"
+	"Operators.h"
+	"Operators.h"
+	"Operators.h"
+
+1545218585 c:\users\zue26\documents\github\language\counter.h
+	<stdio.h>
+	<stdlib.h>
+	<cstdlib>
+	<iostream>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	"ZulanTree.h"
+
+1545336115 c:\users\zue26\documents\github\language\zulantree.h
+	<stdio.h>
+	<stdlib.h>
+	<cstdlib>
+	<iostream>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	<direct.h>
+	"stack.h"
+
+1549192638 c:\users\zue26\documents\github\language\operators.h
+
+1549268266 source:c:\users\zue26\documents\github\language\cpu.cpp
+	"CPU.h"
+	"Commands.h"
+
+1549130165 c:\users\zue26\documents\github\language\cpu.h
+	<stdio.h>
+	<stdlib.h>
+	<iostream>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	<windows.h>
+	<float.h>
+	"stack.h"
+	"text.h"
+	"Data.h"
+	"assembler.h"
+
+1549144644 source:c:\users\zue26\documents\github\language\disassembler.cpp
+	"assembler.h"
+	"Commands.h"
+
+1549148753 source:c:\users\zue26\documents\github\language\stack.cpp
+	"stack.h"
+
+1545345975 source:c:\users\zue26\documents\github\language\text.cpp
+	"text.h"
+
+1545324569 source:c:\users\zue26\documents\github\language\zulantree.cpp
+	"ZulanTree.h"
+	"Operators.h"
+	"Operators.h"
+
+1549372587 source:c:\users\zue26\documents\github\language\zulan.cpp
+	"Zulan.h"
+	"Operators.h"
+	"Operators.h"
+
+1549373805 c:\users\zue26\documents\github\language\zulan.h
+	<stdio.h>
+	<stdlib.h>
+	<cstdlib>
+	<iostream>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	"ZulanTree.h"
+	"CPU.h"
+	"Counter.h"
+
+1549373605 source:c:\users\zue26\documents\github\language\main.cpp
+	"D:\TX\TXlib.h"
+	<iostream>
+	<stdio.h>
+	<stdlib.h>
+	"Zulan.h"
+
+1549355171 d:\tx\txlib.h
+	<assert.h>
+	<stdlib.h>
+	<stdarg.h>
+	<stdio.h>
+	<string.h>
+	<io.h>
+	<fcntl.h>
+	<math.h>
+	<process.h>
+	<signal.h>
+	<setjmp.h>
+	<locale.h>
+	<time.h>
+	<float.h>
+	<limits.h>
+	<vector>
+	<string>
+	<map>
+	<iostream>
+	<numeric>
+	<algorithm>
+	<exception>
+	<stdexcept>
+	<windows.h>
+	<windowsx.h>
+	<tlhelp32.h>
+	<shellapi.h>
+	<shlobj.h>
+	<cxxabi.h>
+	<unwind.h>
+	<stdarg.h>
+	<unistd.h>
+	<termios.h>
+	<conio.h>
+	<direct.h>
+	<shlobj.h>
+	<new.h>
+	<ntstatus.h>
+	<crtdbg.h>
+	<rtcapi.h>
+	<dbghelp.h>
+

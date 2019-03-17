@@ -1,0 +1,554 @@
+// ZULAN.CPP
+
+#include "Zulan.h"
+
+#define COUNT_ERROR(written_node)           if(CountError)\
+                                            {\
+                                                tree_erase(AST,written_node);\
+                                                return NULL;\
+                                            }
+
+#define CLEAR_RESULT                        tree_erase(AST, result)
+
+#define CLEAR_TREE                          CLEAR_RESULT;\
+                                            tree_Dtor(AST);\
+                                            free(AST);\
+
+#define SKIPSPACES                          while(isspace(*S))\
+                                            {\
+                                                if(*S == '\n')\
+                                                {\
+                                                    Str_Num++;\
+                                                    BEGIN = S;\
+                                                }\
+                                                S++;\
+                                            };
+
+#define COMMAND(str)                        !strncmp(S, str, strlen(str))
+
+#define OPER_RESULT_CREATE(oper,val2)              operate_branch_create(&(AST->ver_num), oper, result, val2);
+
+#define CORRECT_CHAR_CHECK(S)           (*S == '_' || *S == '$')
+
+#define CLEAR_VAR_MEM(name_buf)         memset(name_buf, '\0', strlen(name_buf));\
+                                        free(name_buf);
+
+#define SET_RESULT(type)    result = node_create(type, 0);\
+                            AST->ver_num++
+
+#define RESULT_CHILD(child, side)   result->side = child;\
+                                    SET_PARENT(child, result);
+
+
+Tree* get_G(const char* str)
+{
+    Tree* AST = (Tree*) calloc(1, sizeof(*AST));
+    tree_Ctor(AST);
+
+    S = str;
+    BEGIN = str;
+    CountError = 0;
+
+    Node* result = get_F(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    SynAssert(G, *S == '\0', CLEAR_TREE);
+    SynAssert(G, S != str, CLEAR_TREE);
+
+    tree_set_root(AST, result);
+
+    return AST;
+}
+
+Node* get_F(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+    Node* result = node_create(INIT, 0);
+    AST->ver_num++;
+
+    SKIPSPACES;
+    Node* current = result;
+    while (COMMAND("hi,"))
+    {
+        S += 3;
+        SKIPSPACES;
+
+        char* func_name = get_Name();
+        COUNT_ERROR(result);
+
+        int func_index = find_elem(AST->functions, AST->func_count, func_name);
+        if (func_index >= 0)
+        {
+            CLEAR_VAR_MEM(func_name);
+            current = tree_insert_right(AST, current, FUNC, func_index);
+        }
+        else
+        {
+            AST->functions[AST->func_count++] = func_name;                                  // put new function to array of names
+
+            SynAssert(F, AST->func_count < START_VAR_NUM, CLEAR_VAR_MEM(func_name));
+
+            current = tree_insert_right(AST, current, FUNC, AST->func_count - 1);
+        }
+
+        Node* body = get_SEQ(AST);
+        COUNT_ERROR(result);
+
+        LEFT(current) = body;
+        SET_PARENT(body, current);
+
+        SKIPSPACES;
+        SynAssert(B, COMMAND("bye"), CLEAR_RESULT);
+        S += 3;
+
+    }
+
+    SynAssert(F, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_SEQ(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+    Node* result = get_B(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    Node* current = result;
+    while (COMMAND("!"))
+    {
+        S++;
+
+        Node* new_cur = get_B(AST);
+        COUNT_ERROR(result);
+
+        RIGHT(current) = new_cur;
+        SET_PARENT(new_cur, current);
+
+        current = new_cur;
+
+        SKIPSPACES;
+    }
+
+    SynAssert(SEQ, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_B(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+    Node* result = NULL;
+
+    SKIPSPACES;
+    if (COMMAND("hi"))
+    {
+        S += 2;
+
+        SET_RESULT(BLOCK);
+
+        Node* lines = get_SEQ(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(lines, left);
+
+        SKIPSPACES;
+        SynAssert(B, COMMAND("bye"), CLEAR_RESULT);
+        S += 3;
+    }
+    else
+    {
+        SET_RESULT(LINE);
+
+        Node* line = get_L(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(line, left);
+    }
+
+    SynAssert(B, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_L(Tree* AST)
+{
+    assert(AST);
+    const char* old_s = S;
+    Node* result = NULL;
+
+    SKIPSPACES;
+    if (COMMAND("Zmaybe"))
+    {
+        S += 6;
+
+        SET_RESULT(IF);
+
+        SKIPSPACES;
+        SynAssert(L, *S == '(', CLEAR_RESULT);
+        S++;
+
+        Node* condition = get_C(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(condition, left);
+
+        SKIPSPACES;
+        SynAssert(L, *S == ')', CLEAR_RESULT);
+        S++;
+
+        Node* action = get_SEQ(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(action, right);
+
+    }
+    else if (COMMAND("Zcircle"))
+    {
+        S += 7;
+
+        SET_RESULT(CIRCLE);
+
+        SKIPSPACES;
+        SynAssert(L, *S == '(', CLEAR_RESULT);
+        S++;
+
+        Node* condition = get_C(AST);
+        COUNT_ERROR(result);
+
+        SKIPSPACES;
+        SynAssert(L, *S == ')', CLEAR_RESULT);
+        S++;
+
+        RESULT_CHILD(condition, left);
+
+        Node* action = get_SEQ(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(action, right);
+    }
+    else
+    {
+        SET_RESULT(ASSIGN);
+
+        Node* id = get_Id(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(id, left);
+
+        SKIPSPACES;
+        SynAssert(L, *S == '=', CLEAR_RESULT);
+        S++;
+
+        SKIPSPACES;
+        Node* expression = get_E(AST);
+        COUNT_ERROR(result);
+
+        RESULT_CHILD(expression, right);
+    }
+
+    SynAssert(L, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_C(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+
+    Node* result = get_A(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    while (*S == '|' && *(S + 1) == '|')
+    {
+        S += 2;
+
+        Node* new_expr = get_A(AST);
+        COUNT_ERROR(result);
+
+        result = OPER_RESULT_CREATE(OR, new_expr);
+
+        SKIPSPACES;
+    }
+
+    SynAssert(C, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_A(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+
+    Node* result = get_CMP(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    while (*S == '&' && *(S + 1) == '&')
+    {
+        S += 2;
+
+        Node* cmp = get_CMP(AST);
+        COUNT_ERROR(result);
+
+        result = OPER_RESULT_CREATE(AND, cmp);
+
+        SKIPSPACES;
+    }
+
+    SynAssert(A, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_CMP(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+    Node* result = get_E(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    if (*S == '>' || *S == '<' || (*S == '=' && *(S + 1) == '='))
+    {
+        int op = 0;
+
+        if(*S == '>')
+        {
+            S++;
+            op = LAR;
+        }
+        else if(*S == '<')
+        {
+            S++;
+            op = LESS;
+        }
+        else
+        {
+            S += 2;
+            op = EQ;
+        }
+
+        Node* right_expr = get_E(AST);
+        COUNT_ERROR(result);
+
+        result = OPER_RESULT_CREATE(op, right_expr);
+    }
+
+    SynAssert(CMP, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_E(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+
+    Node* result = get_T(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    while (*S == '+' || *S == '-')
+    {
+        int op = (*S == '+') ? SUM: SUB;
+        S++;
+
+        Node* summand = get_T(AST);
+        COUNT_ERROR(result);
+
+        result = OPER_RESULT_CREATE(op, summand);
+
+        SKIPSPACES;
+    }
+    SynAssert(E, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_T(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+
+    Node* result = get_D(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    while (*S == '*' || *S == '/')
+    {
+        int op = (*S == '*') ? MUL: DIV;
+        S++;
+
+        Node* mul = get_D(AST);
+        COUNT_ERROR(result);
+
+        result = OPER_RESULT_CREATE(op, mul);
+
+        SKIPSPACES;
+    }
+    SynAssert(T, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_D(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+
+    Node* result = get_P(AST);
+    COUNT_ERROR(result);
+
+    SKIPSPACES;
+    if (*S == '^')
+    {
+        S++;
+        Node* power = get_P(AST);
+        COUNT_ERROR(power);
+
+        result = OPER_RESULT_CREATE(POW, power);
+    }
+    SynAssert(D, S != old_s, CLEAR_RESULT);
+
+    return result;
+}
+
+Node* get_P(Tree* AST)
+{
+    assert(AST);
+
+    SKIPSPACES;
+    if (*S == '(')
+    {
+        S++;
+        Node* result = get_E(AST);
+        COUNT_ERROR(result);
+
+        SKIPSPACES;
+        SynAssert(P, *S == ')', CLEAR_RESULT);
+        S++;
+        return result;
+    }
+    else if(isdigit(*S) || (*S == '-' && isdigit(*(S+1))))
+    {
+        return get_N(AST);
+    }
+    else
+    {
+        return get_IO(AST);
+    }
+}
+
+Node* get_N(Tree* AST)
+{
+    assert(AST);
+
+    const char* old_s = S;
+
+    char* end_s = NULL;
+
+    tree_type val = strtod(S, &end_s);
+    S = end_s;
+    SynAssert(N, S != old_s,;);
+
+    AST->ver_num++;
+
+    return node_create(CONST_T, val);
+}
+
+Node* get_IO(Tree* AST)
+{
+    assert(AST);
+
+    char* buffer = get_Name();
+    COUNT_ERROR(NULL);
+
+    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+                if(!strncmp(buffer, read_body, strlen(buffer)))\
+                {\
+                        CLEAR_VAR_MEM(buffer);\
+                        Node* result = get_P(AST);\
+                        COUNT_ERROR(result);\
+                        \
+                        return operate_branch_create(&(AST->ver_num), operator, NULL, result);\
+                }
+
+    #include "Operators.h"
+
+    #undef OP_DEF
+
+    AST->ver_num++;
+
+    int var_index = find_elem(AST->variables, AST->var_count, buffer);
+    if (var_index >= 0)
+    {
+        CLEAR_VAR_MEM(buffer);
+        return node_create(VAR, var_index);
+    }
+
+    AST->variables[AST->var_count++] = buffer;                                  // put new variable to array of names
+
+    SynAssert(Id, AST->var_count < START_VAR_NUM, CLEAR_VAR_MEM(buffer));
+
+    return node_create(VAR, AST->var_count - 1);
+}
+
+Node* get_Id(Tree* AST)
+{
+    assert(AST);
+
+    char* buffer = get_Name();
+    COUNT_ERROR(NULL);
+
+    AST->ver_num++;
+
+    int var_index = find_elem(AST->variables, AST->var_count, buffer);
+    if (var_index >= 0)
+    {
+        CLEAR_VAR_MEM(buffer);
+        return node_create(VAR, var_index);
+    }
+
+    AST->variables[AST->var_count++] = buffer;                                  // put new variable to array of names
+
+    SynAssert(Id, AST->var_count < START_VAR_NUM, CLEAR_VAR_MEM(buffer));
+
+    return node_create(VAR, AST->var_count - 1);
+}
+
+char* get_Name()
+{
+    char* name_buf = (char*) calloc(MAX_VAR_LEN, sizeof(*name_buf));
+
+    const char* old_var_s = S;
+
+    char* pos = name_buf;
+    for (; ((isalpha(*S) || CORRECT_CHAR_CHECK(S))&& S == old_var_s) || ((isalnum(*S) || CORRECT_CHAR_CHECK(S)) && S != old_var_s ); pos++, S++)
+    {
+        SynAssert(GetName, pos - name_buf < MAX_VAR_LEN - 1, CLEAR_VAR_MEM(name_buf));
+        *pos = *S;
+    }
+    *pos = '\0';
+
+    SynAssert(GetName, S != old_var_s, CLEAR_VAR_MEM(name_buf));
+
+    return name_buf;
+}

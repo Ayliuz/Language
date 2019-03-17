@@ -1,7 +1,7 @@
 // OPERATORS.H
 
 
-// OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)
+// OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)
 
 #define OPERATE(operator, node_left, node_right)            operate_branch_create(&ver_num_increase, operator, node_left, node_right)
 
@@ -17,7 +17,7 @@
 
 #define IS_ONE(node)                ((node->type == CONST_T) && iszero(node->info - 1))
 
-#define IS_ZERO_BODY(node_zero, new_branch) \
+#define DEL_AND_SET(node_zero, new_branch) \
                                     {\
                                         node_cut(node_zero, out_vertex_num);\
                                         \
@@ -81,18 +81,24 @@ OP_DEF(SUM, 3, "+", result = LEFT_COUNT + RIGHT_COUNT,
 
                 if (IS_ZERO(LEFT(node)))
                 {
-                    IS_ZERO_BODY(LEFT(node), RIGHT(node));
+                    DEL_AND_SET(LEFT(node), RIGHT(node));
                 }
 
                 if (IS_ZERO(RIGHT(node)))
                 {
-                    IS_ZERO_BODY(RIGHT(node), LEFT(node));
+                    DEL_AND_SET(RIGHT(node), LEFT(node));
                 }
 
                 if (LEFT(node)->type == CONST_T && RIGHT(node)->type == VAR)
                 {
                     node_swap(RIGHT(node), LEFT(node));
                 }
+            },
+
+            {
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("add\n");
             }
         )
 
@@ -122,8 +128,14 @@ OP_DEF(SUB, 3, "-", result = LEFT_COUNT - RIGHT_COUNT,
 
                 if (IS_ZERO(RIGHT(node)))
                 {
-                    IS_ZERO_BODY(RIGHT(node), LEFT(node));
+                    DEL_AND_SET(RIGHT(node), LEFT(node));
                 }
+            },
+
+            {
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("subtr\n");
             }
         )
 
@@ -166,18 +178,24 @@ OP_DEF(MUL, 2, "*", result = LEFT_COUNT * RIGHT_COUNT,
 
                 if (IS_ONE(LEFT(node)))
                 {
-                    IS_ZERO_BODY(LEFT(node), RIGHT(node));
+                    DEL_AND_SET(LEFT(node), RIGHT(node));
                 }
 
                 if (IS_ONE(RIGHT(node)))
                 {
-                    IS_ZERO_BODY(RIGHT(node), LEFT(node));
+                    DEL_AND_SET(RIGHT(node), LEFT(node));
                 }
 
                 if (RIGHT(node)->type == CONST_T && LEFT(node)->type == VAR)
                 {
                     node_swap(RIGHT(node), LEFT(node));
                 }
+            },
+
+            {
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("mul\n");
             }
         )
 
@@ -213,9 +231,15 @@ OP_DEF(DIV, 2, "/", result = LEFT_COUNT / RIGHT_COUNT,
 
                 if (IS_ONE(RIGHT(node)))
                 {
-                    IS_ZERO_BODY(RIGHT(node), LEFT(node));
+                    DEL_AND_SET(RIGHT(node), LEFT(node));
                 }
 
+            },
+
+            {
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("div\n");
             }
         )
 
@@ -240,8 +264,12 @@ OP_DEF(SIN, 1, "sin", sin(RIGHT_COUNT),                                         
             {
                 if (RIGHT(node)->type == CONST_T)
                     COUNT_NODE(sin(RIGHT(node)->info));
-            }
+            },
 
+            {
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("sin\n");
+            }
         )
 
 OP_DEF(COS, 1, "cos", cos(RIGHT_COUNT),                                         // right branch is argument
@@ -267,8 +295,12 @@ OP_DEF(COS, 1, "cos", cos(RIGHT_COUNT),                                         
             {
                 if (RIGHT(node)->type == CONST_T)
                     COUNT_NODE(cos(RIGHT(node)->info));
-            }
+            },
 
+            {
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("cos\n");
+            }
         )
 
 OP_DEF(TAN, 1, "tan", tan(RIGHT_COUNT),                                         // right branch is argument
@@ -285,8 +317,12 @@ OP_DEF(TAN, 1, "tan", tan(RIGHT_COUNT),                                         
             {
                 if (RIGHT(node)->type == CONST_T)
                     COUNT_NODE(tan(RIGHT(node)->info));
-            }
+            },
 
+            {
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("tan\n");
+            }
         )
 
 OP_DEF(LN, 1, "ln", log(RIGHT_COUNT),
@@ -304,8 +340,13 @@ OP_DEF(LN, 1, "ln", log(RIGHT_COUNT),
                 {
                     Node* new_branch = RIGHT(RIGHT(node));
                     RIGHT(RIGHT(node)) = NULL;
-                    IS_ZERO_BODY(RIGHT(node), new_branch);
+                    DEL_AND_SET(RIGHT(node), new_branch);
                 }
+            },
+
+            {
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("ln\n");
             }
         )
 
@@ -334,8 +375,13 @@ OP_DEF(EXP, 1, "exp", exp(RIGHT_COUNT),
                 {
                     Node* new_branch = RIGHT(RIGHT(node));
                     RIGHT(RIGHT(node)) = NULL;
-                    IS_ZERO_BODY(RIGHT(node), new_branch);
+                    DEL_AND_SET(RIGHT(node), new_branch);
                 }
+            },
+
+            {
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("exp\n");
             }
         )
 
@@ -416,8 +462,116 @@ OP_DEF(POW, 1, "^", pow(LEFT_COUNT, RIGHT_COUNT),
 
                 if (IS_ONE(RIGHT(node)))
                 {
-                    IS_ZERO_BODY(RIGHT(node), LEFT(node));
+                    DEL_AND_SET(RIGHT(node), LEFT(node));
                 }
-            }
+            },
 
+            {
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT("pow\n");
+            }
         )
+
+OP_DEF(OR, 6, "||",,,,,
+
+
+            {
+                int mark = IND(node);
+                node_to_asm(LEFT(node), AST, asm_file);
+                APRINT(     "push 0\n");
+                APRINT_ARG( "ifneq %i\n", mark);
+
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT(     "push 0\n");
+                APRINT_ARG( "ifneq %i\n", mark);
+                APRINT_ARG( "jump n%i\n", mark);
+
+                APRINT_ARG( "\n: %i\n", mark);
+                APRINT(     "push 1\n");
+                APRINT_ARG( "jump g%i\n", mark);
+
+                APRINT_ARG( "\n: n%i\n", mark);
+                APRINT(     "push 0\n");
+
+                APRINT_ARG( "\n: g%i\n", mark);
+            }
+        )
+OP_DEF(AND, 5, "&&",,,,,
+            {
+                int mark = IND(node);
+                node_to_asm(LEFT(node), AST, asm_file);
+                APRINT(     "push 0\n");
+                APRINT_ARG( "ifeq n%i\n", mark);
+
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT(     "push 0\n");
+                APRINT_ARG( "ifeq n%i\n", mark);
+                APRINT_ARG( "jump %i\n", mark);
+
+                APRINT_ARG( "\n: n%i\n", mark);
+                APRINT(     "push 0\n");
+                APRINT_ARG( "jump g%i\n", mark);
+
+                APRINT_ARG( "\n: %i\n", mark);
+                APRINT(     "push 1\n");
+
+                APRINT_ARG( ": g%i\n", mark);
+            }
+       )
+
+OP_DEF(LAR, 4, "lar",,,,,
+            {
+                int mark = IND(node);
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT_ARG( "ifg %i\n", mark );
+                APRINT_ARG( "jump n%i\n", mark);
+
+                APRINT_ARG( "\n: %i\n", mark);
+                APRINT(     "push 1\n");
+                APRINT_ARG( "jump g%i\n", mark);
+
+                APRINT_ARG( "\n: n%i\n", mark);
+                APRINT(     "push 0\n");
+
+                APRINT_ARG( "\n: g%i\n", mark);
+            }
+       )
+
+OP_DEF(LESS, 4, "less",,,,,
+            {
+                int mark = IND(node);
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT_ARG( "ifl %i\n", mark);
+                APRINT_ARG( "jump n%i\n", mark);
+
+                APRINT_ARG( "\n: %i\n", mark);
+                APRINT(     "push 1\n");
+                APRINT_ARG( "jump g%i\n", mark);
+
+                APRINT_ARG( "\n: n%i\n", mark);
+                APRINT(     "push 0\n");
+
+                APRINT_ARG( "\n: g%i\n", mark);
+            }
+       )
+OP_DEF(EQ, 4, "==",,,,,
+            {
+                int mark = IND(node);
+                node_to_asm(LEFT(node), AST, asm_file);
+                node_to_asm(RIGHT(node), AST, asm_file);
+                APRINT_ARG( "ifeq %i\n", mark);
+                APRINT_ARG( "jump n%i\n", mark);
+
+                APRINT_ARG( "\n: %i\n", mark);
+                APRINT(     "push 1\n");
+                APRINT_ARG( "jump g%i\n", mark);
+
+                APRINT_ARG( "\n: n%i\n", mark);
+                APRINT(     "push 0\n");
+
+                APRINT_ARG( "\n: g%i\n", mark);
+            }
+       )

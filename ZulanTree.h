@@ -46,6 +46,8 @@
 #define SET_CHILDREN(node, left, right)         LEFT(node) = left;\
                                                 RIGHT(node) = right;
 
+#define OPER_VAL(node)              ((int) (node)->info)
+
 typedef double tree_type;
 #define POISON NAN
 
@@ -59,9 +61,19 @@ const size_t MAX_VAR_LEN = 100;
 enum Types
 {
     NO_TYPE = 0,
-    CONST_T = 1,
-    VAR = 2,
-    OP = 3
+    CONST_T,
+    VAR,
+    OP,
+    INIT,
+    FUNC,
+    BODY,
+    BLOCK,
+    LINE,
+    IF,
+    CIRCLE,
+    ASSIGN,
+    CALL,
+    END
 };
 
 enum Operators
@@ -75,7 +87,12 @@ enum Operators
     TAN,
     LN,
     EXP,
-    POW
+    POW,
+    OR,             // '||'
+    AND,            // '&&'
+    LAR,            // '>'
+    LESS,           // '<'
+    EQ              // '=='
 };
 
 struct Node
@@ -103,6 +120,9 @@ struct Tree
 
     char** variables = NULL;
     unsigned int var_count = 0;
+
+    char** functions = NULL;
+    unsigned int func_count = 0;
 
     int TreeHash_struct = HASHDEFAULT;
 

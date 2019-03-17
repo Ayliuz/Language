@@ -1,0 +1,55 @@
+chaos, hero()
+	orpheus(a)!
+	orpheus(b)!
+	orpheus(c)!
+	
+	Tantalus (a == 0)
+		chaos
+			Tantalus (b == 0)
+				chaos
+					Tantalus (c == 0)
+						chaos
+							answer = (-1)!
+							hades(answer)!
+							prometheus()!
+						thanatos!
+					
+					answer = 0!
+					hades(answer)!
+					prometheus()!
+				thanatos!
+				
+			answer = 1!
+			hades(answer)!
+			root = (-1) * c / b!
+			hades(root)!
+			prometheus()!
+		thanatos!
+	
+	d = b^2 - 4 * a * c!
+	
+	Tantalus (d < 0)
+		chaos
+			answer = 0!
+			hades(answer)!
+			prometheus()!
+		thanatos!
+		
+	Tantalus (d == 0)
+		chaos
+			answer = 1!
+			hades(answer)!
+			root = (-1) * b / 2 / a!
+			hades(root)!
+			prometheus()!
+		thanatos!
+	
+	sqd = d ^ (1/2) !
+	answer = 2!
+	hades(answer)!
+	root1 = ((-1) * b + sqd) / 2 / a!
+	hades(root1)!
+	root2 = ((-1) * b - sqd) / 2 / a!
+	hades(root2)!
+	prometheus()!
+thanatos

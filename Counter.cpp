@@ -2,217 +2,6 @@
 
 #include "Counter.h"
 
-#define COUNT_ERROR(written_node)           if(CountError)\
-                                            {\
-                                                tree_erase(AST,written_node);\
-                                                return NULL;\
-                                            }
-
-#define CLEAR_RESULT                        tree_erase(AST, result)
-
-#define CLEAR_TREE                          CLEAR_RESULT;\
-                                            tree_Dtor(AST);\
-                                            free(AST);\
-
-#define SKIPSPACES                          while(isspace(*S))\
-                                            {\
-                                                S++;\
-                                            };\
-
-
-Tree* get_G(const char* str)
-{
-    Tree* AST = (Tree*) calloc(1, sizeof(*AST));
-    tree_Ctor(AST);
-
-    S = str;
-    BEGIN = str;
-    CountError = 0;
-
-    Node* result = get_E(AST);
-    COUNT_ERROR(result);
-
-    SKIPSPACES;
-    SynAssert(G, *S == '\0', CLEAR_TREE);
-    SynAssert(G, S != str, CLEAR_TREE);
-
-    tree_set_root(AST, result);
-
-    return AST;
-}
-
-#define OPER_RESULT_CREATE(oper,val2)              operate_branch_create(&(AST->ver_num), oper, result, val2);
-
-Node* get_E(Tree* AST)
-{
-    assert(AST);
-
-    const char* old_s = S;
-
-    Node* result = get_T(AST);
-    COUNT_ERROR(result);
-
-    SKIPSPACES;
-    while(*S == '+' || *S == '-')
-    {
-        int op = (*S == '+') ? SUM: SUB;
-        S++;
-
-        Node* summand = get_T(AST);
-        COUNT_ERROR(result);
-
-        result = OPER_RESULT_CREATE(op, summand);
-
-        SKIPSPACES;
-    }
-    SynAssert(E, S != old_s, CLEAR_RESULT);
-
-    return result;
-}
-
-Node* get_T(Tree* AST)
-{
-    assert(AST);
-
-    const char* old_s = S;
-
-    Node* result = get_D(AST);
-    COUNT_ERROR(result);
-
-    SKIPSPACES;
-    while(*S == '*' || *S == '/')
-    {
-        int op = (*S == '*') ? MUL: DIV;
-        S++;
-
-        Node* mul = get_D(AST);
-        COUNT_ERROR(result);
-
-        result = OPER_RESULT_CREATE(op, mul);
-
-        SKIPSPACES;
-    }
-    SynAssert(T, S != old_s, CLEAR_RESULT);
-
-    return result;
-}
-
-Node* get_D(Tree* AST)
-{
-    assert(AST);
-
-    const char* old_s = S;
-
-    Node* result = get_P(AST);
-    COUNT_ERROR(result);
-
-    SKIPSPACES;
-    if(*S == '^')
-    {
-        S++;
-        Node* power = get_P(AST);
-        COUNT_ERROR(power);
-
-        result = OPER_RESULT_CREATE(POW, power);
-    }
-    SynAssert(D, S != old_s, CLEAR_RESULT);
-
-    return result;
-}
-
-Node* get_P(Tree* AST)
-{
-    assert(AST);
-
-    SKIPSPACES;
-    if(*S == '(')
-    {
-        S++;
-        Node* result = get_E(AST);
-        COUNT_ERROR(result);
-
-        SKIPSPACES;
-        SynAssert(P, *S == ')', CLEAR_RESULT);
-        S++;
-        return result;
-    }
-    else if(isdigit(*S) || (*S == '-' && isdigit(*(S+1))))
-    {
-        return get_N(AST);
-    }
-    else
-    {
-        return get_Id(AST);
-    }
-}
-
-Node* get_N(Tree* AST)
-{
-    assert(AST);
-
-    const char* old_s = S;
-
-    char* end_s = NULL;
-
-    tree_type val = strtod(S, &end_s);
-    S = end_s;
-    SynAssert(N, S != old_s,;);
-
-    AST->ver_num++;
-
-    return node_create(CONST_T, val);
-}
-
-#define CORRECT_CHAR_CHECK(S)           (*S == '_' || *S == '$')
-
-#define CLEAR_VAR_MEM                   memset(variable, '\0', strlen(variable));\
-                                        free(variable);
-
-Node* get_Id(Tree* AST)
-{
-    assert(AST);
-
-    const char* old_s = S;
-
-    char* variable = (char*) calloc(MAX_VAR_LEN, sizeof(*variable));
-
-    for (char* pos = variable; ((isalpha(*S) || CORRECT_CHAR_CHECK(S))&& S == old_s) || ((isalnum(*S) || CORRECT_CHAR_CHECK(S)) && S != old_s ); pos++, S++)
-    {
-        SynAssert(Id, pos - variable < MAX_VAR_LEN, CLEAR_VAR_MEM);
-        *pos = *S;
-    }
-
-    SynAssert(Id, S != old_s, CLEAR_VAR_MEM);
-
-    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
-                if(!strncmp(variable, read_body, strlen(variable)))\
-                {\
-                        Node* result = get_P(AST);\
-                        COUNT_ERROR(result);\
-                        \
-                        return operate_branch_create(&(AST->ver_num), operator, NULL, result);\
-                }
-
-    #include "Operators.h"
-
-    #undef OP_DEF
-
-    AST->ver_num++;
-
-    int var_index = find_elem(AST->variables, AST->var_count, variable);
-    if (var_index >= 0)
-    {
-        CLEAR_VAR_MEM;
-        return node_create(VAR, var_index);
-    }
-
-    AST->variables[AST->var_count++] = variable;                                  // put new variable to array of names
-
-    SynAssert(Id, AST->var_count < START_VAR_NUM, CLEAR_VAR_MEM);
-
-    return node_create(VAR, AST->var_count - 1);
-}
-
 Node* operate_branch_create(unsigned int *out_tree_ver_num, tree_type oper, Node* value1, Node* value2)
 {
     assert(out_tree_ver_num);
@@ -253,7 +42,7 @@ tree_type leaf_counter(Node* leaf)
         case OP:
             switch((int) leaf->info)
             {
-                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                                             case (operator):\
                                             {\
                                                 count_body;\
@@ -308,7 +97,7 @@ Node* AST_diff(char* variable, Tree* AST, Node* start_node)
 
 #define NEW_NODE(node)              new_node = (node);
 
-#define OPER_VAL(node)                  ((int) (node)->info)
+#define OPER_VAL(node)              ((int) (node)->info)
 
 Node* leaf_diff(int var_index, Node* node, int *out_vertex_num)
 {
@@ -344,7 +133,7 @@ Node* leaf_diff(int var_index, Node* node, int *out_vertex_num)
         case OP:
             switch(OPER_VAL(node))
             {
-                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                                     case (operator):\
                                     {\
                                         diff_body;\
@@ -421,7 +210,7 @@ int leaf_simplify(Node* node, int* out_vertex_num)
         case OP:
             switch(OPER_VAL(node))
             {
-                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+                #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                     case (operator):\
                         {\
                             simplify_body;\
@@ -528,7 +317,7 @@ int leaf_print(FILE* print_file, Tree* AST, Node* node)
 
                 switch(OPER_VAL(node))
                 {
-                    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+                    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                                     case (operator):\
                                     {\
                                         print_body;\
@@ -583,7 +372,7 @@ int leaf_print(FILE* print_file, Tree* AST, Node* node)
 int operation_priority(int operation)
 {
 
-    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body)\
+    #define OP_DEF(operator, priority, read_body, count_body, diff_body, print_body, simplify_body, asm_body)\
                 if (operation == operator)\
                     {\
                         return priority;\

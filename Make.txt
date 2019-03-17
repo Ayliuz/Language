@@ -1,0 +1,401 @@
+push 0
+pop r1
+push 12
+push r1
+add
+pop r1
+
+: hero
+in r5
+push r5
+push r1
+push 1
+add
+pop r3
+pop [r3]
+in r5
+push r5
+push r1
+push 2
+add
+pop r3
+pop [r3]
+in r5
+push r5
+push r1
+push 3
+add
+pop r3
+pop [r3]
+push r1
+push 1
+add
+pop r3
+push [r3]
+push 0.000000
+ifeq 4744
+jump n4744
+
+: 4744
+push 1
+jump g4744
+
+: n4744
+push 0
+
+: g4744
+push 0
+ifeq 4464
+push r1
+push 2
+add
+pop r3
+push [r3]
+push 0.000000
+ifeq 4504
+jump n4504
+
+: 4504
+push 1
+jump g4504
+
+: n4504
+push 0
+
+: g4504
+push 0
+ifeq 4624
+push r1
+push 3
+add
+pop r3
+push [r3]
+push 0.000000
+ifeq 5544
+jump n5544
+
+: 5544
+push 1
+jump g5544
+
+: n5544
+push 0
+
+: g5544
+push 0
+ifeq 6024
+push -1.000000
+push r1
+push 4
+add
+pop r3
+pop [r3]
+push r1
+push 4
+add
+pop r3
+push [r3]
+out
+push r1
+push 12
+subtr
+pop r1
+ret
+
+
+
+: 6024
+push 0.000000
+push r1
+push 4
+add
+pop r3
+pop [r3]
+push r1
+push 4
+add
+pop r3
+push [r3]
+out
+push r1
+push 12
+subtr
+pop r1
+ret
+
+
+
+: 4624
+push 1.000000
+push r1
+push 4
+add
+pop r3
+pop [r3]
+push r1
+push 4
+add
+pop r3
+push [r3]
+out
+push -1.000000
+push r1
+push 3
+add
+pop r3
+push [r3]
+mul
+push r1
+push 2
+add
+pop r3
+push [r3]
+div
+push r1
+push 7
+add
+pop r3
+pop [r3]
+push r1
+push 7
+add
+pop r3
+push [r3]
+out
+push r1
+push 12
+subtr
+pop r1
+ret
+
+
+
+: 4464
+push r1
+push 2
+add
+pop r3
+push [r3]
+push 2.000000
+pow
+push 4.000000
+push r1
+push 1
+add
+pop r3
+push [r3]
+mul
+push r1
+push 3
+add
+pop r3
+push [r3]
+mul
+subtr
+push r1
+push 8
+add
+pop r3
+pop [r3]
+push r1
+push 8
+add
+pop r3
+push [r3]
+push 0.000000
+ifl 8360
+jump n8360
+
+: 8360
+push 1
+jump g8360
+
+: n8360
+push 0
+
+: g8360
+push 0
+ifeq 7200
+push 0.000000
+push r1
+push 4
+add
+pop r3
+pop [r3]
+push r1
+push 4
+add
+pop r3
+push [r3]
+out
+push r1
+push 12
+subtr
+pop r1
+ret
+
+
+
+: 7200
+push r1
+push 8
+add
+pop r3
+push [r3]
+push 0.000000
+ifeq 8680
+jump n8680
+
+: 8680
+push 1
+jump g8680
+
+: n8680
+push 0
+
+: g8680
+push 0
+ifeq 7840
+push 1.000000
+push r1
+push 4
+add
+pop r3
+pop [r3]
+push r1
+push 4
+add
+pop r3
+push [r3]
+out
+push -1.000000
+push r1
+push 2
+add
+pop r3
+push [r3]
+mul
+push 2.000000
+div
+push r1
+push 1
+add
+pop r3
+push [r3]
+div
+push r1
+push 7
+add
+pop r3
+pop [r3]
+push r1
+push 7
+add
+pop r3
+push [r3]
+out
+push r1
+push 12
+subtr
+pop r1
+ret
+
+
+
+: 7840
+push r1
+push 8
+add
+pop r3
+push [r3]
+push 0.500000
+pow
+push r1
+push 9
+add
+pop r3
+pop [r3]
+push 2.000000
+push r1
+push 4
+add
+pop r3
+pop [r3]
+push r1
+push 4
+add
+pop r3
+push [r3]
+out
+push -1.000000
+push r1
+push 2
+add
+pop r3
+push [r3]
+mul
+push r1
+push 9
+add
+pop r3
+push [r3]
+add
+push 2.000000
+div
+push r1
+push 1
+add
+pop r3
+push [r3]
+div
+push r1
+push 10
+add
+pop r3
+pop [r3]
+push r1
+push 10
+add
+pop r3
+push [r3]
+out
+push -1.000000
+push r1
+push 2
+add
+pop r3
+push [r3]
+mul
+push r1
+push 9
+add
+pop r3
+push [r3]
+subtr
+push 2.000000
+div
+push r1
+push 1
+add
+pop r3
+push [r3]
+div
+push r1
+push 11
+add
+pop r3
+pop [r3]
+push r1
+push 11
+add
+pop r3
+push [r3]
+out
+push r1
+push 12
+subtr
+pop r1
+ret
+
+
+end
